@@ -13,6 +13,8 @@ import           Data.Word                  (Word16, Word8)
 import qualified System.Hardware.Serialport as SERIAL
 import           System.IO
 
+import qualified Effects                    as EFF
+
 data Frame = Frame
     { frameWidth  :: Word16
     , frameHeight :: Word16
@@ -57,30 +59,17 @@ someFunc = do
         width = 18
         height = 8
 
+        params = EFF.Params width height maxVal
+
         mkFrame :: Double -> Frame
         mkFrame t = Frame (floor width) (floor height) (floor maxVal) [ map clamp (pixels t) ]
             where
+                pixels = EFF.plasma params
                 clamp :: Double -> Word8
                 clamp v
                     | v > maxVal = floor maxVal
                     | v < 0 = 0
                     | otherwise = round v
-
-        pixels :: Double -> [Double]
-        pixels t = map go [ (x / width, y / height) | y <- [0 .. height - 1], x <- [0 .. width - 1] ]
-            where
-                go :: (Double, Double) -> Double
-                go (x, y) = maxVal * sum waves * wscale
-                    where
-                        wscale = 1 / fromIntegral (length waves)
-                        t' = sin t
-                        x' = x - 0.5
-                        y' = y - 0.5
-                        p = sqrt $ x' * x' + y' * y'
-                        waves =
-                            [ 0.5 + 0.5 * sin (p * 23 + t' * 3)
-                            , 0.5 + 0.5 * cos ((t + (x * y)) * 7)
-                            ]
 
     tStart <- getCurrentTime
 
